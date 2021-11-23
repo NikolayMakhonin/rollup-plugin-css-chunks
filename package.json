@@ -1,6 +1,6 @@
 {
-  "name": "rollup-plugin-css-chunks",
-  "version": "2.0.3",
+  "name": "@flemist/rollup-plugin-css-chunks",
+  "version": "2.0.4",
   "description": "Rollup plugin to extract CSS into chunks",
   "main": "index.js",
   "files": [
@@ -22,9 +22,9 @@
   "author": "Fábio Domingues",
   "license": "MIT",
   "bugs": {
-    "url": "https://github.com/domingues/rollup-plugin-css-chunks/issues"
+    "url": "https://github.com/NikolayMakhonin/rollup-plugin-css-chunks/issues"
   },
-  "homepage": "https://github.com/domingues/rollup-plugin-css-chunks",
+  "homepage": "https://github.com/NikolayMakhonin/rollup-plugin-css-chunks",
   "dependencies": {
     "rollup-pluginutils": "^2.7.1",
     "sourcemap-codec": "^1.4.4",

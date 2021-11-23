@@ -117,7 +117,7 @@ const cssChunks: PluginImpl<InputPluginOptions> = function (options = {}) {
                         if (bundle[c]) {
                             code += (<OutputChunk>bundle[c]).imports.filter(filter)
                                 .map(f => `@import '${
-									path.relative(path.dirname(chunk.fileName), f).replace('\\', '/')
+									path.relative(path.dirname(chunk.fileName), f).replace(/\\/g, '/')
 								}';`).join('');
                         }
                     }
