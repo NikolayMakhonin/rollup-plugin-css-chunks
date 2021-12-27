@@ -1,6 +1,6 @@
 # rollup-plugin-css-chunks changelog
 
-## 2.0.5 (27/12/2021)
+## 2.0.6 (27/12/2021)
 
 * added option: injectImportsWithDependencies
 
