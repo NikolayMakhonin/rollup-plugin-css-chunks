@@ -26,6 +26,7 @@ function makeFileName(name: string, hashed: string, pattern: string) {
 
 interface InputPluginOptions {
     injectImports?: boolean;
+    injectImportsWithDependencies?: boolean;
     chunkFileNames?: string;
     entryFileNames?: string;
     publicPath?: string;
@@ -35,6 +36,7 @@ interface InputPluginOptions {
 
 const defaultPluginOptions = {
     injectImports: false,
+    injectImportsWithDependencies: false,
     chunkFileNames: '[name]-[hash].css',
     entryFileNames: '[name].css',
     publicPath: '',
@@ -107,7 +109,11 @@ const cssChunks: PluginImpl<InputPluginOptions> = function (options = {}) {
                 emitFiles = false;
             }
 
-            for (const chunk of Object.values(bundle).reverse()) {
+            const chunks = pluginOptions.injectImportsWithDependencies
+                ? Object.values(bundle)
+                : Object.values(bundle).reverse()
+
+            for (const chunk of chunks) {
                 if (chunk.type === 'asset') continue;
 
                 let code = '';
