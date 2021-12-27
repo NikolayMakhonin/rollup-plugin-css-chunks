@@ -121,14 +121,19 @@ const cssChunks: PluginImpl<InputPluginOptions> = function (options = {}) {
                 if (pluginOptions.injectImports) {
                     for (const c of chunk.imports) {
                         if (bundle[c]) {
-                            code += (<OutputChunk>bundle[c]).imports.filter(filter)
+                            const importCode = (<OutputChunk>bundle[c]).imports.filter(filter)
                                 .map(f => `@import '${
 									path.relative(path.dirname(chunk.fileName), f).replace(/\\/g, '/')
 								}';`).join('');
+                            if (importCode) {
+                                if (pluginOptions.injectImportsWithDependencies) {
+                                    code = importCode + '\n' + code;
+                                } else {
+                                    code += importCode + '\n'
+                                }
+                            }
                         }
                     }
-                    if (code != '')
-                        code += '\n';
                 }
 
                 const css_modules: string[] = []
@@ -164,7 +169,14 @@ const cssChunks: PluginImpl<InputPluginOptions> = function (options = {}) {
                         }
                         mappings.push(...decoded);
                     }
+                    // if (pluginOptions.injectImportsWithDependencies) {
+                    //     code = css_data[f].code.replace(
+                    //         /^\s*((\/\*.*?\*\/|;|@(import|charset|layer)\b[^;{}()]*;)\s*)*/,
+                    //         o => o + code,
+                    //     ) + '\n'
+                    // } else {
                     code += css_data[f].code + '\n';
+                    // }
                 }
 
                 if (code === '') continue;
