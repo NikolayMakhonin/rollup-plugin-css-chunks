@@ -140,7 +140,7 @@ const cssChunks: PluginImpl<InputPluginOptions> = function (options = {}) {
 									path.relative(path.dirname(chunk.fileName), f).replace(/\\/g, '/')
 								}';`).join('');
                             if (importCode) {
-                                code = importCode + '\n' + code;
+                                code += importCode + '\n';
                             }
                         }
                     }
