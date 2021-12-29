@@ -108,21 +108,32 @@ const cssChunks: PluginImpl<InputPluginOptions> = function (options = {}) {
                 emitFiles = false;
             }
 
-            const chunksSet = new Set<OutputChunk>()
+            let order = 0
+            const chunksMap = new Map<string, {order: number, chunk: OutputChunk}>()
             function addChunk(chunk: OutputAsset | OutputChunk) {
                 if (!chunk || chunk.type === 'asset') return;
                 chunk.imports.forEach(o => {
                     addChunk(bundle[o])
                 })
-                chunksSet.add(chunk)
+                if (!chunksMap.has(chunk.fileName)) {
+                    order++
+                    chunksMap.set(chunk.fileName, {order, chunk})
+                }
             }
             Object.values(bundle).forEach(addChunk)
 
-            for (const chunk of chunksSet.values()) {
+            for (const {chunk} of chunksMap.values()) {
                 let code = '';
 
                 if (pluginOptions.injectImports) {
-                    for (const c of chunk.imports) {
+                    const imports = [...chunk.imports].sort((o1, o2) => {
+                        // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+                        // @ts-ignore
+                        return chunksMap.get(o1).order > chunksMap.get(o2).order
+                            ? 1
+                            : -1
+                    })
+                    for (const c of imports) {
                         if (bundle[c]) {
                             const importCode = (<OutputChunk>bundle[c]).imports.filter(filter)
                                 .map(f => `@import '${
