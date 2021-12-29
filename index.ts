@@ -2,6 +2,7 @@ import path from 'path';
 import crypto from 'crypto';
 import {
     NormalizedOutputOptions,
+    OutputAsset,
     OutputBundle,
     OutputChunk,
     PluginContext,
@@ -26,7 +27,6 @@ function makeFileName(name: string, hashed: string, pattern: string) {
 
 interface InputPluginOptions {
     injectImports?: boolean;
-    injectImportsWithDependencies?: boolean;
     chunkFileNames?: string;
     entryFileNames?: string;
     publicPath?: string;
@@ -36,7 +36,6 @@ interface InputPluginOptions {
 
 const defaultPluginOptions = {
     injectImports: false,
-    injectImportsWithDependencies: false,
     chunkFileNames: '[name]-[hash].css',
     entryFileNames: '[name].css',
     publicPath: '',
@@ -109,13 +108,17 @@ const cssChunks: PluginImpl<InputPluginOptions> = function (options = {}) {
                 emitFiles = false;
             }
 
-            const chunks = pluginOptions.injectImportsWithDependencies
-                ? Object.values(bundle)
-                : Object.values(bundle).reverse()
+            const chunksSet = new Set<OutputChunk>()
+            function addChunk(chunk: OutputAsset | OutputChunk) {
+                if (!chunk || chunk.type === 'asset') return;
+                chunk.imports.forEach(o => {
+                    addChunk(bundle[o])
+                })
+                chunksSet.add(chunk)
+            }
+            Object.values(bundle).forEach(addChunk)
 
-            for (const chunk of chunks) {
-                if (chunk.type === 'asset') continue;
-
+            for (const chunk of chunksSet.values()) {
                 let code = '';
 
                 if (pluginOptions.injectImports) {
@@ -126,11 +129,7 @@ const cssChunks: PluginImpl<InputPluginOptions> = function (options = {}) {
 									path.relative(path.dirname(chunk.fileName), f).replace(/\\/g, '/')
 								}';`).join('');
                             if (importCode) {
-                                if (pluginOptions.injectImportsWithDependencies) {
-                                    code = importCode + '\n' + code;
-                                } else {
-                                    code += importCode + '\n'
-                                }
+                                code = importCode + '\n' + code;
                             }
                         }
                     }
@@ -169,14 +168,7 @@ const cssChunks: PluginImpl<InputPluginOptions> = function (options = {}) {
                         }
                         mappings.push(...decoded);
                     }
-                    // if (pluginOptions.injectImportsWithDependencies) {
-                    //     code = css_data[f].code.replace(
-                    //         /^\s*((\/\*.*?\*\/|;|@(import|charset|layer)\b[^;{}()]*;)\s*)*/,
-                    //         o => o + code,
-                    //     ) + '\n'
-                    // } else {
                     code += css_data[f].code + '\n';
-                    // }
                 }
 
                 if (code === '') continue;
