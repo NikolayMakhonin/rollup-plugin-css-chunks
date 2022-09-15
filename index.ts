@@ -40,7 +40,8 @@ const defaultPluginOptions = {
     entryFileNames: '[name].css',
     publicPath: '',
     sourcemap: false,
-    emitFiles: true
+    emitFiles: true,
+    makeRelativeUrls: false,
 };
 
 function escapeRegExp(text: string) {
@@ -203,19 +204,21 @@ const cssChunks: PluginImpl<InputPluginOptions> = function (options = {}) {
                     }
                     : null;
 
-                const bundleDir = generateBundleOpts.dir ? generateBundleOpts.dir : '.'
-                code = code.replace(new RegExp(`\\burl\\((${
+                if (pluginOptions.makeRelativeUrls) {
+                    const bundleDir = generateBundleOpts.dir ? generateBundleOpts.dir : '.'
+                    code = code.replace(new RegExp(`\\burl\\((${
                     escapeRegExp(path.resolve(bundleDir))
                         .replace(/[/\\]/, '[/\\\\]')
-                }[/\\\\][^)]+)\\)`, 'g'),
-                    (_, assetPath) => {
-                        const relativeAssetPath = path.relative(
+                    }[/\\\\][^)]+)\\)`, 'g'),
+                      (_, assetPath) => {
+                          const relativeAssetPath = path.relative(
                             path.resolve(bundleDir, path.dirname(css_file_name)),
                             path.resolve(bundleDir, assetPath),
-                        ).replace(/\\/g, '/')
-                        return `url(${relativeAssetPath})`
-                    },
-                )
+                          ).replace(/\\/g, '/')
+                          return `url(${relativeAssetPath})`
+                      },
+                    )
+                }
 
                 const css_file_url = urljoin(pluginOptions.publicPath, css_file_name);
                 chunk.code = chunk.code.replace(new RegExp(`CSS_FILE_${escapeRegExp(chunk.fileName)}`, 'g'), css_file_url);
