@@ -12,6 +12,10 @@ import {
 } from 'rollup';
 import {createFilter} from 'rollup-pluginutils';
 import {encode, decode} from 'sourcemap-codec';
+// eslint-disable-next-line @typescript-eslint/ban-ts-comment
+// @ts-expect-error
+import mergeSourceMap from "merge-source-map";
+import MagicString from "magic-string";
 import {readFileSync} from "fs";
 import urljoin from 'url-join';
 
@@ -42,6 +46,10 @@ const defaultPluginOptions = {
     sourcemap: false,
     emitFiles: true
 };
+
+function escapeRegExp(text: string) {
+    return text.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
+}
 
 const cssChunks: PluginImpl<InputPluginOptions> = function (options = {}) {
     const filter = createFilter(/\.css$/i, []);
@@ -187,21 +195,55 @@ const cssChunks: PluginImpl<InputPluginOptions> = function (options = {}) {
                 const css_file_name = makeFileName(chunk.name, hash(code),
                     chunk.isEntry ? pluginOptions.entryFileNames : pluginOptions.chunkFileNames);
 
+                const emitMap = emitFiles && pluginOptions.sourcemap
+                let map = emitMap
+                    ? {
+                        version: 3,
+                        file: css_file_name,
+                        sources: sources,
+                        sourcesContent: sourcesContent,
+                        names: [],
+                        mappings: encode(mappings)
+                    }
+                    : null;
+
+                const newCode = emitMap
+                  ? new MagicString(code)
+                  : code
+
+                newCode.replace(new RegExp(`\\burl\\((${
+                    escapeRegExp(path.resolve(generateBundleOpts.dir ? generateBundleOpts.dir : '.'))
+                }[/\\\\][^)]+)\\)`, 'g'),
+                    (_, assetPath) => {
+                        const relativeAssetPath = path.relative(
+                            path.resolve(
+                                generateBundleOpts.dir ? generateBundleOpts.dir : '.',
+                                path.dirname(css_file_name),
+                            ),
+                            path.resolve(assetPath),
+                        )
+                        return `url(${relativeAssetPath})`
+                    },
+                )
+
+                if (emitMap) {
+                    const newMap = (newCode as MagicString).generateMap({
+                        source: css_file_name,
+                        file: css_file_name,
+                        hires: false,
+                        includeContent: false,
+                    })
+                    map = mergeSourceMap(map, newMap)
+                }
+
+                code = newCode.toString()
+
                 const css_file_url = urljoin(pluginOptions.publicPath, css_file_name);
-                chunk.code = chunk.code.replace(new RegExp(`CSS_FILE_${chunk.fileName.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}`, 'g'), css_file_url);
+                chunk.code = chunk.code.replace(new RegExp(`CSS_FILE_${escapeRegExp(chunk.fileName)}`, 'g'), css_file_url);
 
                 if (emitFiles) {
                     if (emitFiles && pluginOptions.sourcemap) {
-                        let map = null;
                         const map_file_name = css_file_name + '.map';
-                        map = {
-                            version: 3,
-                            file: css_file_name,
-                            sources: sources,
-                            sourcesContent: sourcesContent,
-                            names: [],
-                            mappings: encode(mappings)
-                        };
                         code += `/*# sourceMappingURL=${encodeURIComponent(map_file_name)} */`;
                         this.emitFile({
                             type: 'asset',

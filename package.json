@@ -29,6 +29,8 @@
   },
   "homepage": "https://github.com/NikolayMakhonin/rollup-plugin-css-chunks",
   "dependencies": {
+    "magic-string": "^0.26.3",
+    "merge-source-map": "^1.1.0",
     "rollup-pluginutils": "^2.7.1",
     "sourcemap-codec": "^1.4.4",
     "url-join": "^4.0.1"
