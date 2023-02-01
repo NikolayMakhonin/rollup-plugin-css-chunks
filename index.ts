@@ -134,7 +134,7 @@ const cssChunks: PluginImpl<InputPluginOptions> = function (options = {}) {
                     const imports = [...chunk.imports].sort((o1, o2) => {
                         // eslint-disable-next-line @typescript-eslint/ban-ts-comment
                         // @ts-ignore
-                        return chunksMap.get(o1).order > chunksMap.get(o2).order
+                        return chunksMap.get(o1)?.order > chunksMap.get(o2)?.order
                             ? 1
                             : -1
                     })
